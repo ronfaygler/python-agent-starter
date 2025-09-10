@@ -69,7 +69,7 @@ class RecordingManager:
         )
         logger.info(f"Set public read policy for bucket: {bucket_name}")
 
-    async def start_recording(self, room_name: str) -> Optional[str]:
+    async def start_recording(self, room_name: str, modelsNames: list[str]) -> Optional[str]:
         if not self._livekit_api:
             logger.warning("Cannot start recording: LiveKit API not initialized")
             return None
@@ -84,7 +84,7 @@ class RecordingManager:
             await self._ensure_public_access(bucket_name, region)
 
             timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-            filename_prefix = f"{room_name}-{timestamp}"
+            filename_prefix = f"{room_name}-{modelsNames[0]}_{modelsNames[1]}_{modelsNames[2]}-{timestamp}"
             bucket_name = os.getenv("DO_SPACES_BUCKET", "")
             region = endpoint.split('.')[0]
             # Main recording file path

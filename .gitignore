@@ -6,6 +6,7 @@ __pycache__
 .idea
 KMS
 .venv
+.venv-win
 .vscode
 *.egg-info
 .pytest_cache
