@@ -20,7 +20,7 @@ from livekit.agents import (
     ChatContext,
 )
 from livekit.agents.llm import function_tool
-from livekit.plugins import cartesia, deepgram, noise_cancellation, openai, silero, groq
+from livekit.plugins import cartesia, deepgram, noise_cancellation, openai, silero #, bithuman # groq,
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 from recording import RecordingManager
 
@@ -141,11 +141,13 @@ async def entrypoint(ctx: JobContext):
     if knowledge_content:
         logger.info(f"Knowledge last part: {knowledge_content[-50:]}...")
     
+    modelsNames = ["gpt-4o-mini", "whisper-1", "gpt-4o-mini-tts"]
+
     # Set up a voice AI pipeline using OpenAI, Cartesia, Deepgram, and the LiveKit turn detector
     session = AgentSession(
         # A Large Language Model (LLM) is your agent's brain, processing user input and generating a response
         # See all providers at https://docs.livekit.io/agents/integrations/llm/
-        llm=openai.LLM(model="gpt-4o-mini"),
+        llm=openai.LLM(model=modelsNames[0]),
         # llm=groq.LLM(
         #     model="llama-3.1-8b-instant"
         # ),
@@ -160,11 +162,11 @@ async def entrypoint(ctx: JobContext):
         # See all providers at https://docs.livekit.io/agents/integrations/stt/
         # stt=deepgram.STT(model="nova-3", language="multi"),
         # stt=groq.STT(model='whisper-large-v3-turbo', language="multi"),
-        stt=openai.STT(model="whisper-1"),
+        stt=openai.STT(model=modelsNames[1], language="he"),
         # Text-to-speech (TTS) is your agent's voice, turning the LLM's text into speech that the user can hear
         # See all providers at https://docs.livekit.io/agents/integrations/tts/
         # tts=cartesia.TTS(voice="6f84f4b8-58a2-430c-8c79-688dad597532"),
-        tts=openai.TTS(model="gpt-4o-mini-tts"),
+        tts=openai.TTS(model=modelsNames[2]),
         # VAD and turn detection are used to determine when the user is speaking and when the agent should respond
         # See more at https://docs.livekit.io/agents/build/turns
         turn_detection=MultilingualModel(),
@@ -173,7 +175,6 @@ async def entrypoint(ctx: JobContext):
         # See more at https://docs.livekit.io/agents/build/audio/#preemptive-generation
         preemptive_generation=True,
     )
-
     # # To use a realtime model instead of a voice pipeline, use the following session setup instead:
     # session = AgentSession(
     #     # See all providers at https://docs.livekit.io/agents/integrations/realtime/
@@ -208,12 +209,16 @@ async def entrypoint(ctx: JobContext):
 
     ctx.add_shutdown_callback(log_usage)
 
-    # # Add a virtual avatar to the session, if desired
+    # # # Add a virtual avatar to the session, if desired
     # # For other providers, see https://docs.livekit.io/agents/integrations/avatar/
-    # avatar = hedra.AvatarSession (
-    #   avatar_id="...",  # See https://docs.livekit.io/agents/integrations/avatar/hedra
+    # avatar = bithuman.AvatarSession(
+    #     model_path="./alice_the_storyteller.imx"
     # )
-    # # Start the avatar and wait for it to join
+    # # # avatar = hedra.AvatarSession (
+    # # #   avatar_id="...",  # See https://docs.livekit.io/agents/integrations/avatar/hedra
+    # # # )
+
+    # # # Start the avatar and wait for it to join
     # await avatar.start(session, room=ctx.room)
 
     # Create a chat context with the knowledge content
@@ -239,7 +244,7 @@ async def entrypoint(ctx: JobContext):
 
     try:
         # Start recording the room
-        recording_id = await recording_manager.start_recording(ctx.room.name)
+        recording_id = await recording_manager.start_recording(ctx.room.name, modelsNames)
         if recording_id:
             logger.info(f"Started recording with ID: {recording_id}")
         else:
